@@ -12,7 +12,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "@network-stackify/http": "^1.0.0"
+    "@network-stackify/http": "^0.0.1"
   },
   "repository": {
     "type": "git",
