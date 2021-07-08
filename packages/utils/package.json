@@ -1,12 +1,22 @@
 {
   "name": "@network-stackify/utils",
-  "version": "1.0.0",
-  "description": "Utilities for network-stackify stack",
+  "version": "0.0.0",
+  "description": "Utilities for network-stackify network stack",
   "author": "TNSahid <sahid.miller@gmail.com>",
-  "homepage": "",
   "license": "ISC",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: run tests from root\" && exit 1"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SahidMiller/network-stackify.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SahidMiller/network-stackify/issues"
+  },
+  "homepage": "https://github.com/SahidMiller/network-stackify/tree/master/packages/utils"
 }

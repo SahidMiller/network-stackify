@@ -1,25 +1,28 @@
 {
   "name": "@network-stackify/tls",
-  "version": "0.2.2",
-  "description": "A fork of tls-browserify that port of the tls module for the browser.",
-  "author": "Emersion <contact@emersion.fr>",
-  "license": "MIT",
+  "version": "0.0.0",
+  "description": "A port of node tls module for the browser and node.",
+  "author": "TNSahid <sahid.miller@gmail.com>",
+  "license": "ISC",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "src/index.js",
   "dependencies": {
     "@network-stackify/utils": "^1.0.0",
     "node-forge": "^0.10.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/emersion/tls-browserify.git"
   },
   "keywords": [
     "browserify",
     "tls",
     "browser"
   ],
-  "bugs": {
-    "url": "https://github.com/emersion/tls-browserify/issues"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SahidMiller/network-stackify.git"
   },
-  "homepage": "https://github.com/emersion/tls-browserify"
+  "bugs": {
+    "url": "https://github.com/SahidMiller/network-stackify/issues"
+  },
+  "homepage": "https://github.com/SahidMiller/network-stackify/tree/master/packages/tls"
 }

@@ -14,5 +14,13 @@
   "license": "ISC",
   "devDependencies": {
     "lerna": "^4.0.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SahidMiller/network-stackify.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SahidMiller/network-stackify/issues"
+  },
+  "homepage": "https://github.com/SahidMiller/network-stackify"
 }
