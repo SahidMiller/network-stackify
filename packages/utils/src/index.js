@@ -15,7 +15,7 @@ exports.normalizeArgs = function normalizeArgs(args) {
 
   if (args.length === 0) {
     arr = [{}, null];
-    arr[normalizedArgsSymbol] = true;
+    arr[exports.normalizedArgsSymbol] = true;
     return arr;
   }
 
@@ -39,7 +39,7 @@ exports.normalizeArgs = function normalizeArgs(args) {
   if (typeof cb !== "function") arr = [options, null];
   else arr = [options, cb];
 
-  arr[normalizedArgsSymbol] = true;
+  arr[exports.normalizedArgsSymbol] = true;
   return arr;
 };
 
