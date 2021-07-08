@@ -1,0 +1,14 @@
+{
+  "name": "@network-stackify/https",
+  "version": "1.0.0",
+  "description": "A fork of node.js internals for browser and node https",
+  "main": "src\\index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@network-stackify/http": "^1.0.0"
+  }
+}

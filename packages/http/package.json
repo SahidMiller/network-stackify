@@ -1,0 +1,15 @@
+{
+  "name": "@network-stackify/http",
+  "version": "1.0.0",
+  "description": "Network stack for node and browser inspired by libp2p p2p tunnels.",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@network-stackify/utils": "^1.0.0",
+    "node-forge": "^0.10.0"
+  }
+}

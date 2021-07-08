@@ -1,0 +1,12 @@
+{
+  "name": "@network-stackify/utils",
+  "version": "1.0.0",
+  "description": "Utilities for network-stackify stack",
+  "author": "TNSahid <sahid.miller@gmail.com>",
+  "homepage": "",
+  "license": "ISC",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  }
+}
