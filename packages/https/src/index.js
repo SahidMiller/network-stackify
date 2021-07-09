@@ -83,8 +83,7 @@ function createConnection(port, host, options) {
     }
   }
 
-  const createConn =
-    options.createConnection || require("tls").createConnection;
+  const createConn = options.createConnection || require("tls").connect;
   const socket = createConn(options);
 
   if (options._agentKey) {
