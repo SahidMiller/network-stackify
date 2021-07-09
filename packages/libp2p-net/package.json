@@ -21,8 +21,7 @@
     "multiaddr": "^10.0.0",
     "p-fifo": "^1.0.0",
     "peer-id": "^0.15.0",
-    "protons": "^2.0.1",
-    "stream": "^0.0.2"
+    "protons": "^2.0.1"
   },
   "repository": {
     "type": "git",
