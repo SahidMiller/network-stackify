@@ -10,7 +10,7 @@ exports.normalizedArgsSymbol = Symbol("normalizedArgs");
 // For Socket.prototype.connect(), the [...] part is ignored
 // For Server.prototype.listen(), the [...] part is [, backlog]
 // but will not be handled here (handled in listen())
-exports.normalizeArgs = function normalizeArgs(args) {
+exports._normalizeArgs = function normalizeArgs(args) {
   let arr;
 
   if (args.length === 0) {

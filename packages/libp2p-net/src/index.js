@@ -6,10 +6,7 @@ const END_CHUNK = Buffer.alloc(0);
 
 const buffer = require("it-buffer");
 const getCircuitRelay = require("./circuit-relay");
-const {
-  normalizeArgs,
-  normalizedArgsSymbol,
-} = require("@network-stackify/utils");
+const net = require("@network-stackify/utils");
 
 /**
  * Convert async iterator stream to socket
@@ -148,7 +145,7 @@ class Socket extends Duplex {
     if (Array.isArray(args[0]) && args[0][normalizedArgsSymbol]) {
       normalized = args[0];
     } else {
-      normalized = normalizeArgs(args);
+      normalized = net._normalizeArgs(args);
     }
 
     const options = normalized[0];
@@ -172,7 +169,7 @@ class Socket extends Duplex {
  * @returns
  */
 function connect(...args) {
-  const normalized = normalizeArgs(args);
+  const normalized = net._normalizeArgs(args);
   const [options] = normalized;
 
   if (options.timeout) {
@@ -190,5 +187,5 @@ module.exports = {
   createConnection: connect,
   Socket,
   Stream: Socket,
-  _normalizeArgs: normalizeArgs,
+  ...net,
 };

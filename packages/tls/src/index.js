@@ -1,7 +1,7 @@
 var util = require("util");
 var Stream = require("stream");
 var forge = require("node-forge");
-const { normalizeArgs } = require("@network-stackify/utils");
+const { _normalizeArgs } = require("@network-stackify/utils");
 
 // Compatibility shim for the browser
 if (forge.forge) {
@@ -233,7 +233,7 @@ function isObject(val) {
 }
 
 function normalizeConnectArgs(listArgs) {
-  var args = normalizeArgs(listArgs);
+  var args = _normalizeArgs(listArgs);
   var options = args[0];
   var cb = args[1];
   if (isObject(listArgs[1])) {
