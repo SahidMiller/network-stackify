@@ -1,7 +1,7 @@
+var { Socket, _normalizeArgs } = require("net");
 var util = require("util");
 var Stream = require("stream");
 var forge = require("node-forge");
-const { _normalizeArgs } = require("@network-stackify/utils");
 
 // Compatibility shim for the browser
 if (forge.forge) {
@@ -14,10 +14,6 @@ class TLSSocket extends Stream.Duplex {
     //Create new socket if none passed, God willing.
     super();
 
-    if (!socket) {
-      throw new TypeError("Argument 'socket' is required");
-    }
-
     this._options = options;
     this._secureEstablished = false;
     this._chunks = [];
@@ -26,21 +22,7 @@ class TLSSocket extends Stream.Duplex {
     // distinguishable from regular ones.
     this.encrypted = true;
 
-    this._socket = socket;
-
-    // these are simply passed through
-    this._socket.on("close", (hadError) => this.emit("close", hadError));
-
-    const onConnect = () => {
-      this.init();
-      this.emit("connect");
-    };
-
-    if (this._socket.connecting || this._socket.readyState != "open") {
-      this._socket.on("connect", onConnect);
-    } else {
-      setImmediate(onConnect);
-    }
+    this.initSocket(socket);
   }
 
   log(...args) {
@@ -209,7 +191,6 @@ class TLSSocket extends Stream.Duplex {
   }
 
   _write(data, encoding, cb) {
-    this.log("writing", this._secureEstablished);
     if (!this._secureEstablished) {
       this._chunks.push([data, encoding, cb]);
     } else {
@@ -219,12 +200,31 @@ class TLSSocket extends Stream.Duplex {
   }
 
   get _connecting() {
-    return this._socket.connecting;
+    return this._socket && this._socket.connecting;
+  }
+
+  onConnect() {
+    this.init();
+    this.emit("connect");
+  }
+
+  initSocket(socket) {
+    if (!socket) return;
+
+    this._socket = socket;
+
+    if (this._socket.connecting || this._socket.readyState !== "open") {
+      this._socket.once("connect", this.onConnect);
+    } else {
+      this.onConnect();
+    }
+
+    this._socket.once("close", (hadError) => this.emit("close", hadError));
+    return this;
   }
 
   connect(...args) {
-    this._socket.connect(...args);
-    return this;
+    return this.initSocket(new Socket().connect(...args));
   }
 }
 
@@ -242,6 +242,10 @@ function normalizeConnectArgs(listArgs) {
     options = util._extend(options, listArgs[2]);
   }
   return cb ? [options, cb] : [options];
+}
+
+function onConnectSecure() {
+  this.emit("secureConnect");
 }
 
 exports.connect = function (...args) {
@@ -263,7 +267,8 @@ exports.connect = function (...args) {
     rootCertificates: options.rootCertificates,
   });
 
-  if (cb) socket.once("secure", cb);
+  socket.once("secure", onConnectSecure);
+  if (cb) socket.once("secureConnect", cb);
 
   if (!options.socket) {
     socket.connect(options);

@@ -21,7 +21,7 @@
 
 "use strict";
 
-const { isIP } = require("@network-stackify/utils");
+const { isIP } = require("net");
 const EventEmitter = require("events");
 let debug = require("util").debuglog("http", (fn) => {
   debug = fn;

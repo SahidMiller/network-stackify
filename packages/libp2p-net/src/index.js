@@ -6,7 +6,7 @@ const END_CHUNK = Buffer.alloc(0);
 
 const buffer = require("it-buffer");
 const getCircuitRelay = require("./circuit-relay");
-const net = require("@network-stackify/utils");
+const net = require("./internals");
 
 /**
  * Convert async iterator stream to socket
@@ -142,7 +142,7 @@ class Socket extends Duplex {
     // already been normalized (so we don't normalize more than once). This has
     // been solved before in https://github.com/nodejs/node/pull/12342, but was
     // reverted as it had unintended side effects.
-    if (Array.isArray(args[0]) && args[0][normalizedArgsSymbol]) {
+    if (Array.isArray(args[0]) && args[0][net.normalizedArgsSymbol]) {
       normalized = args[0];
     } else {
       normalized = net._normalizeArgs(args);
