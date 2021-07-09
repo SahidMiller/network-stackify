@@ -1,6 +1,6 @@
 {
   "name": "@network-stackify/libp2p-net",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "A port of node's net module for the browser using libp2p",
   "author": "TNSahid <sahid.miller@gmail.com>",
   "license": "ISC",
@@ -12,7 +12,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "@network-stackify/utils": "^0.0.2",
+    "@network-stackify/utils": "^0.0.3",
     "get-iterator": "^1.0.2",
     "it-buffer": "^0.1.3",
     "it-handshake": "^2.0.0",
