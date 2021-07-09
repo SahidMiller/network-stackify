@@ -55,7 +55,8 @@ class TLSSocket extends Stream.Duplex {
   setNoDelay() {}
 
   createCaStore() {
-    const rootCertificates = this._options.rootCertificates || [];
+    const rootCertificates =
+      this._options.rootCertificates || exports.rootCertificates;
     const caStore = forge.pki.createCaStore([]);
 
     for (let i = 0; i < rootCertificates.length; i++) {
@@ -256,6 +257,7 @@ exports.connect = function (...args) {
   options = util._extend(defaults, options || {});
 
   var socket = new TLSSocket(options.socket, {
+    ...options,
     servername: options.host,
     rejectUnauthorized: options.rejectUnauthorized,
     rootCertificates: options.rootCertificates,
@@ -263,12 +265,11 @@ exports.connect = function (...args) {
 
   if (cb) socket.once("secure", cb);
 
-  if (!options.disableAutoConnect) {
-    socket.connect({
-      host: options.host,
-      port: options.port,
-    });
+  if (!options.socket) {
+    socket.connect(options);
   }
 
   return socket;
 };
+
+exports.rootCertificates = require("./rootCertificates");
