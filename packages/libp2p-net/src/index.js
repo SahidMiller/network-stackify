@@ -19,53 +19,52 @@ const {
 class Socket extends Duplex {
   constructor(options) {
     options = options || {};
-    let self = this;
-    let reading = false;
-    let fifo = new Fifo();
-
-    const readable = {
-      async read(size) {
-        if (reading) return;
-        reading = true;
-
-        try {
-          while (true) {
-            //TODO God willing: if no duplex, then not connected yet, so either wait to read or return nothing.
-            const { value, done } = await self.duplex.source.next(size);
-            if (done) return this.push(null);
-            if (!this.push(value)) break;
-          }
-        } catch (err) {
-          this.emit("error", err);
-        } finally {
-          reading = false;
-        }
-      },
-    };
-
-    const writable = {
-      write(chunk, enc, cb) {
-        fifo.push(chunk).then(() => cb(), cb);
-      },
-      final(cb) {
-        fifo.push(END_CHUNK).then(() => cb(), cb);
-      },
-    };
-
-    Object.assign(options, readable, writable);
 
     super(options);
 
-    this.fifo = fifo;
+    this.reading = false;
+    this.fifo = new Fifo();
+
     //TODO God willing: Implement required net.Socket convensions, setTimeout
     this.setTimeout = () => {};
     this.setNoDelay = () => {};
 
-    this.readyState = "closed";
     this.connecting = false;
   }
 
-  async _connect({ libp2p, multiaddr, proto, hops }) {
+  _write(chunk, enc, cb) {
+    this.fifo.push(chunk).then(() => cb(), cb);
+  }
+
+  _final(cb) {
+    this.fifo.push(END_CHUNK).then(() => cb(), cb);
+  }
+
+  async _read(size) {
+    if (this.connecting || !this.duplex) {
+      this.once("connect", () => this._read(size));
+      return;
+    }
+
+    if (this.reading) return;
+
+    this.reading = true;
+
+    try {
+      while (true) {
+        //TODO God willing: if no duplex, then not connected yet, so either wait to read or return nothing.
+        const { value, done } = await this.duplex.source.next(size);
+        if (done) return this.push(null);
+        if (!this.push(value)) break;
+      }
+    } catch (err) {
+      this.emit("error", err);
+    } finally {
+      this.reading = false;
+    }
+  }
+
+  async internalConnect({ libp2p, multiaddr, proto, hops }) {
     if (!libp2p) {
       throw new Error("Invalid arguments. 'options.libp2p' is required");
     }
@@ -124,8 +123,20 @@ class Socket extends Duplex {
     }
 
     this.duplex = duplex;
-
     this.emit("connect");
+  }
+
+  get readyState() {
+    if (this.connecting) {
+      return "opening";
+    } else if (this.readable && this.writable) {
+      return "open";
+    } else if (this.readable && !this.writable) {
+      return "readOnly";
+    } else if (!this.readable && this.writable) {
+      return "writeOnly";
+    }
+    return "closed";
   }
 
   connect(...args) {
@@ -148,7 +159,7 @@ class Socket extends Duplex {
     }
 
     //TODO God willing: parse hops and protocols from multiaddress
-    this._connect(options);
+    this.internalConnect(options);
 
     return this;
   }
@@ -160,7 +171,7 @@ class Socket extends Duplex {
  * @param {*} proto p2p protocol name
  * @returns
  */
-async function connect(...args) {
+function connect(...args) {
   const normalized = normalizeArgs(args);
   const [options] = normalized;
 
