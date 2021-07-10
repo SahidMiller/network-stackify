@@ -593,7 +593,6 @@ function parserOnIncomingClient(res, shouldKeepAlive) {
     req.shouldKeepAlive = false;
   }
 
-  DTRACE_HTTP_CLIENT_RESPONSE(socket, req);
   req.res = res;
   res.req = req;
 
