@@ -33,27 +33,10 @@ let debug = require("util").debuglog("http", (fn) => {
 
 const kIncomingMessage = Symbol("IncomingMessage");
 const kRequestTimeout = Symbol("RequestTimeout");
-const kOnHeaders = 0;
-const kOnHeadersComplete = 0;
-const kOnBody = 0;
-const kOnMessageComplete = 0;
 const kOnExecute = 0;
 const kOnTimeout = 0;
 
 const MAX_HEADER_PAIRS = 2000;
-
-// Only called in the slow case where slow means
-// that the request headers were either fragmented
-// across multiple TCP packets or too large to be
-// processed in a single run. This method is also
-// called to process trailing HTTP headers.
-function parserOnHeaders(headers, url) {
-  // Once we exceeded headers limit - stop collecting them
-  if (this.maxHeaderPairs <= 0 || this._headers.length < this.maxHeaderPairs) {
-    this._headers.push(...headers);
-  }
-  this._url += url;
-}
 
 // `headers` and `url` are set only if .onHeaders() has not been called for
 // this request.
@@ -63,6 +46,7 @@ function parserOnHeadersComplete(
   versionMajor,
   versionMinor,
   headers,
+  rawHeaders,
   method,
   url,
   statusCode,
@@ -101,12 +85,8 @@ function parserOnHeadersComplete(
     incoming.socket[kRequestTimeout] = undefined;
   }
 
-  let n = headers.length;
-
-  // If parser.maxHeaderPairs <= 0 assume that there's no limit.
-  if (parser.maxHeaderPairs > 0) n = Math.min(n, parser.maxHeaderPairs);
-
-  incoming._addHeaderLines(headers, n);
+  incoming.headers = headers || {};
+  incoming.rawHeaders = rawHeaders || [];
 
   if (typeof method === "number") {
     // server only
@@ -147,7 +127,6 @@ function parserOnMessageComplete() {
       parser._headers = [];
       parser._url = "";
     }
-
     // For emit end event
     stream.push(null);
   }
@@ -155,75 +134,174 @@ function parserOnMessageComplete() {
   // Force to read the next incoming message
   readStart(parser.socket);
 }
+
 const util = require("node-forge/lib/util");
 const http = require("node-forge/lib/http");
 
-const parsers = new FreeList("parsers", 1000, function parsersCb() {
-  const parser = {
-    initialize: () => {},
-    //On data call back for parsing, God willing
-    execute: (data) => {
-      const response = {};
-      const _parser = http.createResponse();
+class HTTPParser {
+  initialize() {
+    this._response = http.createResponse();
+  }
+
+  //On data call back for parsing, God willing
+  execute(data) {
+    const read = this.tryParseHeaders(data) || 0;
+
+    if (this.tryParseBody(data, read)) {
+      parserOnMessageComplete.call(this);
+    }
+
+    return data.length;
+  }
+
+  tryParseHeaders(data) {
+    const response = this._response;
+
+    if (!response.headerReceived) {
       const buffer = util.createBuffer();
-
       buffer.putBytes(data);
-      _parser.readHeader(buffer);
-      _parser.readBody(buffer);
 
-      if (_parser.version) {
-        const version = _parser.version.split("/")[1];
-        const [majorVersion, minorVersion] = version.split(".");
+      response.readHeader(buffer);
 
-        response.httpVersion = version;
-        response.httpVersionMajor = Number(majorVersion);
-        response.httpVersionMinor = Number(minorVersion);
-      }
+      if (response.headerReceived) {
+        let httpVersionMajor, httpVersionMinor;
 
-      const headers = {};
-      const rawHeaders = [];
-      const kHeaders = Object.keys(_parser.fields);
+        //Parse version
+        if (response.version) {
+          const version = response.version.split("/")[1];
+          const [majorVersion, minorVersion] = version.split(".");
 
-      for (let i = 0; i < kHeaders.length; i++) {
-        const kHeader = kHeaders[i];
-        const vHeader = _parser.getField(kHeader);
-
-        headers[kHeader.toLowerCase()] = vHeader;
-        rawHeaders.push(kHeader);
-        if (vHeader instanceof Array) {
-          vHeader.forEach((v) => rawHeaders.push(vHeader));
-        } else {
-          rawHeaders.push(vHeader);
+          httpVersionMajor = Number(majorVersion);
+          httpVersionMinor = Number(minorVersion);
         }
+
+        //Parse headers
+        const headers = {};
+        const rawHeaders = [];
+        const kHeaders = Object.keys(response.fields);
+
+        for (let i = 0; i < kHeaders.length; i++) {
+          const kHeader = kHeaders[i];
+          const vHeader = response.getField(kHeader);
+
+          headers[kHeader.toLowerCase()] = vHeader;
+          rawHeaders.push(kHeader);
+          if (vHeader instanceof Array) {
+            vHeader.forEach((v) => rawHeaders.push(vHeader));
+          } else {
+            rawHeaders.push(vHeader);
+          }
+        }
+
+        //Send to http/https agent
+        const connection = response.getField("connection") || "";
+        const upgrade = connection.toLowerCase() === "upgrade";
+        const keepAlive = response.getField("Keep-Alive") !== null;
+
+        parserOnHeadersComplete.call(
+          this,
+          httpVersionMajor,
+          httpVersionMinor,
+          headers,
+          rawHeaders,
+          null,
+          "",
+          response.message,
+          response.code,
+          upgrade,
+          keepAlive
+        );
+
+        //Headers for parsing body
+        let contentLength = response.getField("Content-Length");
+        const transferEncoding = response.getField("Transfer-Encoding");
+        const contentType = response.getField("Content-Type");
+
+        if (contentLength !== null) {
+          contentLength = parseInt(contentLength);
+        }
+
+        this._response = {
+          headerReceived: true,
+          bodyReceived: false,
+          contentLength: contentLength,
+          transferEncoding: transferEncoding,
+          contentType: contentType,
+          headerReceived: true,
+          bodyBytesParsed: 0,
+        };
+
+        return buffer.read;
       }
+    }
 
-      if (_parser.getField("connection") === "Upgrade") {
-        response.upgrade = true;
-      }
+    return 0;
+  }
 
-      response.statusMessage = _parser.message;
-      response.statusCode = _parser.code;
-      response.headers = headers;
-      response.rawHeaders = rawHeaders;
-      response.socket = parser.socket;
+  tryParseBody(data, start) {
+    const response = this._response;
 
-      parser.incoming = response;
-      return data.length;
-    },
-    finish: () => {
-      //Called in socketOnData http_client
-    },
-    free: () => {
-      //Called by freeParser in http_common and socketOnData in http_client
-    },
-  };
+    //Return if body is already parsed
+    if (response.bodyReceived || !response.headerReceived) {
+      return;
+    }
 
+    const contentLength = response.contentLength;
+
+    // read specified length
+    const shouldReadContentLength =
+      contentLength !== null && contentLength >= 0;
+
+    // no content-length, read until close
+    const shouldReadUntilClose =
+      (contentLength !== null && contentLength < 0) ||
+      (contentLength === null && response.contentType !== null);
+
+    if (shouldReadContentLength) {
+      this.readContentLength(data, start);
+    } else if (shouldReadUntilClose) {
+      this.readUntilFinished(data, start);
+    } else {
+      response.bodyReceived = true;
+    }
+
+    return response.bodyReceived;
+  }
+
+  readContentLength(data, start) {
+    parserOnBody.call(this, data, start, data.length);
+
+    const response = this._response;
+    response.bodyBytesParsed = response.bodyBytesParsed + (data.length - start);
+    response.bodyReceived = response.bodyBytesParsed === response.contentLength;
+  }
+
+  readUntilFinished(data, start) {
+    parserOnBody.call(this, data, start, data.length);
+
+    if (!this._response.readBodyUntilClose) {
+      this.socket.on("close", () => {
+        parserOnMessageComplete.call(this);
+      });
+    }
+
+    this._response.readBodyUntilClose = true;
+  }
+
+  finish() {
+    //Called in socketOnData http_client
+    this._response = null;
+  }
+
+  free() {
+    //Called by freeParser in http_common and socketOnData in http_client
+  }
+}
+
+const parsers = new FreeList("parsers", 1000, function parsersCb() {
+  //TODO God willing: while reading response, inherit incoming, God willing, emit correct events
+  const parser = new HTTPParser();
   cleanParser(parser);
-
-  parser[kOnHeaders] = parserOnHeaders;
-  parser[kOnHeadersComplete] = parserOnHeadersComplete;
-  parser[kOnBody] = parserOnBody;
-  parser[kOnMessageComplete] = parserOnMessageComplete;
 
   return parser;
 });
