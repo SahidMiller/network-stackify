@@ -5,7 +5,7 @@
   "workspaces": [
     "packages/*"
   ],
-  "main": "./packages/stack",
+  "main": "./packages/stack/src/index.js",
   "description": "Network stack for node and browser inspired by libp2p p2p tunnels.",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

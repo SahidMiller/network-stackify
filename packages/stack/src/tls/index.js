@@ -3,7 +3,7 @@ const util = require("util");
 const Stream = require("stream");
 const forge = require("node-forge");
 
-const { ERR_TLS_CERT_ALTNAME_INVALID } = require("../../utils").errors.codes;
+const { ERR_TLS_CERT_ALTNAME_INVALID } = require("../utils").errors.codes;
 
 // Compatibility shim for the browser
 if (forge.forge) {
