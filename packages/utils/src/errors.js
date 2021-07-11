@@ -104,14 +104,6 @@ const maybeOverridePrepareStackTrace = (globalThis, error, trace) => {
 let util;
 let assert;
 
-let internalUtil = null;
-function lazyInternalUtil() {
-  if (!internalUtil) {
-    internalUtil = require("util");
-  }
-  return internalUtil;
-}
-
 let internalUtilInspect = null;
 function lazyInternalUtilInspect() {
   if (!internalUtilInspect) {

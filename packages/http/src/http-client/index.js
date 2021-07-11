@@ -37,7 +37,7 @@ const { addAbortSignal, finished } = require("stream");
 const { URL } = require("url");
 const { kOutHeaders, kNeedDrain } = require("./internal/http");
 
-const { connResetException, codes } = require("./internal/errors");
+const { connResetException, codes } = require("@network-stackify/utils").errors;
 const {
   ERR_HTTP_HEADERS_SENT,
   ERR_INVALID_ARG_TYPE,
@@ -311,6 +311,7 @@ function ClientRequest(input, options, cb) {
         if (err) {
           process.nextTick(() => this.emit("error", err));
         } else if (!created) {
+          created = true;
           this.onSocket(socket);
         }
       };
@@ -467,7 +468,6 @@ function socketOnData(d) {
   const parser = this.parser;
 
   assert(parser && parser.socket === socket);
-
   const ret = parser.execute(d);
 
   if (ret instanceof Error) {
@@ -545,9 +545,10 @@ function parserOnIncomingClient(res, shouldKeepAlive) {
   const socket = this.socket;
   const req = socket._httpMessage;
 
-  debug("AGENT incoming response!");
+  debug("AGENT incoming response!", req.res);
 
   if (req.res) {
+    debug("AGENT req.res already exists. destroying socket");
     // We already have a response object, this means the server
     // sent a double response.
     socket.destroy();
@@ -556,15 +557,19 @@ function parserOnIncomingClient(res, shouldKeepAlive) {
   req.res = res;
 
   // Skip body and treat as Upgrade.
-  if (res.upgrade) return 2;
+  if (res.upgrade) {
+    debug("AGENT res upgrade");
+    return 2;
+  }
 
   // Responses to CONNECT request is handled as Upgrade.
   const method = req.method;
   if (method === "CONNECT") {
+    debug("AGENT res method connect");
     res.upgrade = true;
     return 2; // Skip body and treat as Upgrade.
   }
-
+  debug("AGENT", res.statusCode);
   if (statusIsInformational(res.statusCode)) {
     // Restart the parser, as this is a 1xx informational message.
     req.res = null; // Clear res so that we don't hit double-responses.
@@ -587,6 +592,7 @@ function parserOnIncomingClient(res, shouldKeepAlive) {
   }
 
   if (req.shouldKeepAlive && !shouldKeepAlive && !req.upgradeOrConnect) {
+    debug("AGENT keep alive false");
     // Server MUST respond with Connection:keep-alive for us to enable it.
     // If we've been upgraded (via WebSockets) we also shouldn't try to
     // keep the connection open.

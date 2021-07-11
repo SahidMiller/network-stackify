@@ -1,6 +1,7 @@
 "use strict";
 
-const { ERR_INVALID_ARG_VALUE } = require("../errors").codes;
+const { ERR_INVALID_ARG_VALUE } = require("@network-stackify/utils").errors
+  .codes;
 
 function highWaterMarkFrom(options, isDuplex, duplexKey) {
   return options.highWaterMark != null
