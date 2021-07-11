@@ -1,11 +1,9 @@
-# `utils`
+# `@network-stackify/utils`
 
-> TODO: description
+> Utils for network-stackify
 
 ## Usage
 
 ```
 const utils = require('utils');
-
-// TODO: DEMONSTRATE API
 ```
