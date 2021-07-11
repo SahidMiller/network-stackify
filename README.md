@@ -2,7 +2,7 @@
 
 > Network stack ports from native nodejs
 
-This repository is inspired by go-ipfs [experimental p2p streams](https://github.com/ipfs/go-ipfs/blob/master/docs/experimental-features.md#ipfs-p2p). In particular, as a base socket for building HTTP, HTTPS, TLS, and WS over arbitrary [libp2p transports](https://docs.libp2p.io/concepts/transport/). The rest is modelling/porting native apis.
+This repository is inspired by go-ipfs [experimental p2p streams](https://github.com/ipfs/go-ipfs/blob/master/docs/experimental-features.md#ipfs-p2p). In particular, as a [base socket](https://github.com/SahidMiller/network-stackify/tree/master/packages/libp2p-net) for building HTTP, HTTPS, TLS, and WS implementations over arbitrary [libp2p transports](https://docs.libp2p.io/concepts/transport/), modelling native apis.
 
 ## Packages
 
