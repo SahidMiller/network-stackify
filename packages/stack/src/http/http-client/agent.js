@@ -28,7 +28,7 @@ let debug = require("util").debuglog("http", (fn) => {
 });
 const {
   codes: { ERR_OUT_OF_RANGE },
-} = require("@network-stackify/utils").errors;
+} = require("../../utils").errors;
 const kOnKeylog = Symbol("onkeylog");
 const kRequestOptions = Symbol("requestOptions");
 // New Agent code.

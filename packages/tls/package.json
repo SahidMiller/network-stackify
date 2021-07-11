@@ -7,10 +7,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "main": "src/index.js",
-  "dependencies": {
-    "node-forge": "^0.10.0"
-  },
+  "main": "index.js",
   "keywords": [
     "browserify",
     "tls",
@@ -23,5 +20,8 @@
   "bugs": {
     "url": "https://github.com/SahidMiller/network-stackify/issues"
   },
-  "homepage": "https://github.com/SahidMiller/network-stackify/tree/master/packages/tls"
+  "homepage": "https://github.com/SahidMiller/network-stackify/tree/master/packages/tls",
+  "dependencies": {
+    "@network-stackify/stack": "^0.0.0"
+  }
 }

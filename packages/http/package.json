@@ -7,12 +7,9 @@
   "publishConfig": {
     "access": "public"
   },
-  "main": "src/index.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "dependencies": {
-    "node-forge": "^0.10.0"
   },
   "repository": {
     "type": "git",
@@ -21,5 +18,8 @@
   "bugs": {
     "url": "https://github.com/SahidMiller/network-stackify/issues"
   },
-  "homepage": "https://github.com/SahidMiller/network-stackify/tree/master/packages/http"
+  "homepage": "https://github.com/SahidMiller/network-stackify/tree/master/packages/http",
+  "dependencies": {
+    "@network-stackify/stack": "^0.0.0"
+  }
 }

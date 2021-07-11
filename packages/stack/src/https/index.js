@@ -21,7 +21,7 @@
 
 "use strict";
 
-const { Agent: HttpAgent, ClientRequest } = require("@network-stackify/http");
+const { Agent: HttpAgent, ClientRequest } = require("../http");
 let debug = require("util").debuglog("https", (fn) => {
   debug = fn;
 });

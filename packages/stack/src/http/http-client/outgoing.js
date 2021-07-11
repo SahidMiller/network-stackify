@@ -48,7 +48,7 @@ const {
     ERR_STREAM_DESTROYED,
   },
   hideStackFrames,
-} = require("@network-stackify/utils").errors;
+} = require("../../utils").errors;
 const { isUint8Array } = require("util").types;
 
 let debug = require("util").debuglog("http", (fn) => {

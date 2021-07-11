@@ -37,7 +37,7 @@ const { addAbortSignal, finished } = require("stream");
 const { URL } = require("url");
 const { kOutHeaders, kNeedDrain } = require("./internal/http");
 
-const { connResetException, codes } = require("@network-stackify/utils").errors;
+const { connResetException, codes } = require("../../utils").errors;
 const {
   ERR_HTTP_HEADERS_SENT,
   ERR_INVALID_ARG_TYPE,
