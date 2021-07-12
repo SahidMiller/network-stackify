@@ -1,6 +1,6 @@
 {
   "name": "@network-stackify/http",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "A port of node's http module for the browser and node.",
   "author": "TNSahid <sahid.miller@gmail.com>",
   "license": "ISC",
@@ -20,6 +20,6 @@
   },
   "homepage": "https://github.com/SahidMiller/network-stackify/tree/master/packages/http",
   "dependencies": {
-    "@network-stackify/stack": "^0.0.2"
+    "@network-stackify/stack": "^0.1.0"
   }
 }

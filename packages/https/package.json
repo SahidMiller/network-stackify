@@ -1,6 +1,6 @@
 {
   "name": "@network-stackify/https",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "A port of node's https module for the browser and node.",
   "author": "TNSahid <sahid.miller@gmail.com>",
   "license": "ISC",
@@ -20,6 +20,6 @@
   },
   "homepage": "https://github.com/SahidMiller/network-stackify/tree/master/packages/https",
   "dependencies": {
-    "@network-stackify/stack": "^0.0.2"
+    "@network-stackify/stack": "^0.1.0"
   }
 }

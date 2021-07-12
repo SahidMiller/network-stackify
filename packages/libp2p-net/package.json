@@ -1,6 +1,6 @@
 {
   "name": "@network-stackify/libp2p-net",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "A port of node's net module for the browser using libp2p",
   "author": "TNSahid <sahid.miller@gmail.com>",
   "license": "ISC",
@@ -20,6 +20,6 @@
   },
   "homepage": "https://github.com/SahidMiller/network-stackify/tree/master/packages/libp2p-net",
   "dependencies": {
-    "@network-stackify/stack": "^0.0.2"
+    "@network-stackify/stack": "^0.1.0"
   }
 }
