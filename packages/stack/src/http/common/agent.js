@@ -21,7 +21,7 @@
 
 "use strict";
 
-const { isIP } = require("net");
+const net = require("net");
 const EventEmitter = require("events");
 let debug = require("util").debuglog("http", (fn) => {
   debug = fn;
@@ -29,6 +29,12 @@ let debug = require("util").debuglog("http", (fn) => {
 const {
   codes: { ERR_OUT_OF_RANGE },
 } = require("../../utils").errors;
+const {
+  validateNumber,
+  validateOneOf,
+  validateString,
+} = require("../../utils/validators");
+
 const kOnKeylog = Symbol("onkeylog");
 const kRequestOptions = Symbol("requestOptions");
 // New Agent code.
@@ -42,13 +48,6 @@ const kRequestOptions = Symbol("requestOptions");
 // Another departure is that all code related to HTTP parsing is in
 // ClientRequest.onSocket(). The Agent is now *strictly*
 // concerned with managing a connection pool.
-
-class ReusedHandle {
-  constructor(type, handle) {
-    this.type = type;
-    this.handle = handle;
-  }
-}
 
 function freeSocketErrorListener(err) {
   const socket = this;
@@ -80,18 +79,16 @@ function Agent(options) {
   this.maxTotalSockets = this.options.maxTotalSockets || 99;
   this.totalSocketCount = 0;
 
-  if (!Array.prototype.includes.call(["fifo", "lifo"], this.scheduling)) {
-    throw new TypeError(
-      "Invalid argument, scheduling must be one of: 'fifo', 'lifo'"
-    );
-  }
+  validateOneOf(this.scheduling, "scheduling", ["fifo", "lifo"]);
 
-  if (
-    typeof this.maxTotalSockets !== "number" ||
-    Number.isNaN(this.maxTotalSockets) ||
-    this.maxTotalSockets <= 0
-  ) {
-    throw new ERR_OUT_OF_RANGE("maxTotalSockets", "> 0", this.maxTotalSockets);
+  if (this.maxTotalSockets !== undefined) {
+    validateNumber(this.maxTotalSockets, "maxTotalSockets");
+    if (this.maxTotalSockets <= 0 || NumberIsNaN(this.maxTotalSockets))
+      throw new ERR_OUT_OF_RANGE(
+        "maxTotalSockets",
+        "> 0",
+        this.maxTotalSockets
+      );
   } else {
     this.maxTotalSockets = Infinity;
   }
@@ -269,8 +266,7 @@ Agent.prototype.addRequest = function addRequest(
 };
 
 Agent.prototype.createConnection = function createConnection(options) {
-  const createConn =
-    this.options.createConnection || require("net").createConnection;
+  const createConn = this.options.createConnection || net.createConnection;
   return createConn(options);
 };
 
@@ -309,11 +305,7 @@ function calculateServerName(options, req) {
   let servername = options.host;
   const hostHeader = req.getHeader("host");
   if (hostHeader) {
-    if (typeof hostHeader !== "string") {
-      throw new TypeError(
-        "Invalid arguments, 'options.headers.host' must be a string"
-      );
-    }
+    validateString(hostHeader, "options.headers.host");
 
     // abc => abc
     // abc:123 => abc
@@ -332,7 +324,7 @@ function calculateServerName(options, req) {
     }
   }
   // Don't implicitly set invalid (IP) servernames.
-  if (isIP(servername)) servername = "";
+  if (net.isIP(servername)) servername = "";
   return servername;
 }
 

@@ -6,7 +6,7 @@ const END_CHUNK = Buffer.alloc(0);
 
 const buffer = require("it-buffer");
 const getCircuitRelay = require("./circuit-relay");
-const net = require("./internals");
+const net = require("../../utils/net");
 
 /**
  * Convert async iterator stream to socket

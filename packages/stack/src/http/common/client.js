@@ -26,17 +26,16 @@ const {
   _checkIsHttpToken: checkIsHttpToken,
   freeParser,
   parsers,
-  HTTPParser,
-  isLenient,
   prepareError,
 } = require("./common");
 const { OutgoingMessage } = require("./outgoing");
 const Agent = require("./agent");
 const { Buffer } = require("buffer");
-const { addAbortSignal, finished } = require("stream");
+const { urlToHttpOptions, searchParamsSymbol } = require("../../utils/url");
 const { URL } = require("url");
 const { kOutHeaders, kNeedDrain } = require("./internal/http");
 
+const { addAbortSignal, finished } = require("stream");
 const { connResetException, codes } = require("../../utils").errors;
 const {
   ERR_HTTP_HEADERS_SENT,
@@ -45,34 +44,14 @@ const {
   ERR_INVALID_PROTOCOL,
   ERR_UNESCAPED_CHARACTERS,
 } = codes;
-const searchParamsSymbol = Symbol("query");
+const { validateInteger } = require("../../utils/validators");
+
 let debug = require("util").debuglog("http", (fn) => {
   debug = fn;
 });
 
 const INVALID_PATH_REGEX = /[^\u0021-\u00ff]/;
-
-function urlToHttpOptions(url) {
-  const options = {
-    protocol: url.protocol,
-    hostname:
-      typeof url.hostname === "string" && url.hostname.startsWith("[")
-        ? url.hostname.slice(1, -1)
-        : url.hostname,
-    hash: url.hash,
-    search: url.search,
-    pathname: url.pathname,
-    path: `${url.pathname || ""}${url.search || ""}`,
-    href: url.href,
-  };
-  if (url.port !== "") {
-    options.port = Number(url.port);
-  }
-  if (url.username || url.password) {
-    options.auth = `${url.username}:${url.password}`;
-  }
-  return options;
-}
+const kError = Symbol("kError");
 
 function validateHost(host, name) {
   if (host !== null && host !== undefined && typeof host !== "string") {
@@ -83,13 +62,6 @@ function validateHost(host, name) {
     );
   }
   return host;
-}
-
-class HTTPClientAsyncResource {
-  constructor(type, req) {
-    this.type = type;
-    this.req = req;
-  }
 }
 
 function ClientRequest(input, options, cb) {
@@ -370,6 +342,7 @@ ClientRequest.prototype.destroy = function destroy(err) {
     this.res._dump();
   }
 
+  this[kError] = err;
   this.err = err;
   this.socket?.destroy(err);
 

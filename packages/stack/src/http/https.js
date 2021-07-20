@@ -21,36 +21,73 @@
 
 "use strict";
 
-const { Agent: HttpAgent, ClientRequest } = require("../http");
+const tls = require("tls");
+
+const { Agent: HttpAgent } = require("./common/agent");
+const { ClientRequest } = require("./common/client");
+const HttpServer = require("./common/server");
+
+const { urlToHttpOptions, searchParamsSymbol } = require("../utils/url");
 let debug = require("util").debuglog("https", (fn) => {
   debug = fn;
 });
-const searchParamsSymbol = Symbol("query");
 
-function urlToHttpOptions(url) {
-  const options = {
-    protocol: url.protocol,
-    hostname:
-      typeof url.hostname === "string" && url.hostname.startsWith("[")
-        ? url.hostname.slice(1, -1)
-        : url.hostname,
-    hash: url.hash,
-    search: url.search,
-    pathname: url.pathname,
-    path: `${url.pathname || ""}${url.search || ""}`,
-    href: url.href,
-  };
-  if (url.port !== "") {
-    options.port = Number(url.port);
+function Server(opts, requestListener) {
+  if (!(this instanceof Server)) return new Server(opts, requestListener);
+
+  if (typeof opts === "function") {
+    requestListener = opts;
+    opts = undefined;
   }
-  if (url.username || url.password) {
-    options.auth = `${url.username}:${url.password}`;
+  opts = { ...opts };
+
+  if (!opts.ALPNProtocols) {
+    // http/1.0 is not defined as Protocol IDs in IANA
+    // https://www.iana.org/assignments/tls-extensiontype-values
+    //       /tls-extensiontype-values.xhtml#alpn-protocol-ids
+    opts.ALPNProtocols = ["http/1.1"];
   }
-  return options;
+
+  HttpServer.storeHTTPOptions.prototype.call(this, opts);
+  tls.Server.prototype.call(this, opts, HttpServer._connectionListener);
+
+  this.httpAllowHalfOpen = false;
+
+  if (requestListener) {
+    this.addListener("request", requestListener);
+  }
+
+  this.addListener("tlsClientError", function addListener(err, conn) {
+    if (!this.emit("clientError", err, conn)) conn.destroy(err);
+  });
+
+  this.timeout = 0;
+  this.keepAliveTimeout = 5000;
+  this.maxHeadersCount = null;
+  this.headersTimeout = 60 * 1000; // 60 seconds
+  this.requestTimeout = 0;
+}
+Object.setPrototypeOf(Server.prototype, tls.Server.prototype);
+Object.setPrototypeOf(Server, tls.Server);
+
+Server.prototype.setTimeout = HttpServer.Server.prototype.setTimeout;
+
+/**
+ * Creates a new `https.Server` instance.
+ * @param {{
+ *   IncomingMessage?: IncomingMessage;
+ *   ServerResponse?: ServerResponse;
+ *   insecureHTTPParser?: boolean;
+ *   maxHeaderSize?: number;
+ *   }} [opts]
+ * @param {Function} [requestListener]
+ * @returns {Server}
+ */
+function createServer(opts, requestListener) {
+  return new Server(opts, requestListener);
 }
 
 // HTTPS agents.
-
 function createConnection(port, host, options) {
   if (port !== null && typeof port === "object") {
     options = port;
@@ -83,7 +120,7 @@ function createConnection(port, host, options) {
     }
   }
 
-  const createConn = options.createConnection || require("tls").connect;
+  const createConn = options.createConnection || tls.connect;
   const socket = createConn(options);
 
   if (options._agentKey) {
@@ -322,4 +359,6 @@ module.exports = {
   globalAgent,
   get,
   request,
+  Server,
+  createServer,
 };

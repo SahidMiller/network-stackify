@@ -143,7 +143,7 @@ class HTTPParser {
     this._response = http.createResponse();
   }
 
-  //On data call back for parsing, God willing
+  //On data call back for parsing
   execute(data) {
     const read = this.tryParseHeaders(data) || 0;
 
