@@ -26,6 +26,8 @@ const {
   _checkIsHttpToken: checkIsHttpToken,
   freeParser,
   parsers,
+  HTTPParser,
+  isLenient,
   prepareError,
 } = require("./common");
 const { OutgoingMessage } = require("./outgoing");
@@ -53,6 +55,9 @@ let debug = require("util").debuglog("http", (fn) => {
 const INVALID_PATH_REGEX = /[^\u0021-\u00ff]/;
 const kError = Symbol("kError");
 
+const kLenientAll = HTTPParser.kLenientAll | 0;
+const kLenientNone = HTTPParser.kLenientNone | 0;
+
 function validateHost(host, name) {
   if (host !== null && host !== undefined && typeof host !== "string") {
     throw new ERR_INVALID_ARG_TYPE(
@@ -64,6 +69,12 @@ function validateHost(host, name) {
   return host;
 }
 
+class HTTPClientAsyncResource {
+  constructor(type, req) {
+    this.type = type;
+    this.req = req;
+  }
+}
 function ClientRequest(input, options, cb) {
   OutgoingMessage.call(this);
 
@@ -162,6 +173,19 @@ function ClientRequest(input, options, cb) {
   if (maxHeaderSize !== undefined)
     validateInteger(maxHeaderSize, "maxHeaderSize", 0);
   this.maxHeaderSize = maxHeaderSize;
+
+  const insecureHTTPParser = options.insecureHTTPParser;
+  if (
+    insecureHTTPParser !== undefined &&
+    typeof insecureHTTPParser !== "boolean"
+  ) {
+    throw new ERR_INVALID_ARG_TYPE(
+      "options.insecureHTTPParser",
+      "boolean",
+      insecureHTTPParser
+    );
+  }
+  this.insecureHTTPParser = insecureHTTPParser;
 
   this.path = options.path || "/";
   if (cb) {
@@ -677,7 +701,15 @@ function emitFreeNT(req) {
 function tickOnSocket(req, socket) {
   const parser = parsers.alloc();
   req.socket = socket;
-  parser.initialize();
+  const lenient =
+    req.insecureHTTPParser === undefined ? isLenient() : req.insecureHTTPParser;
+  parser.initialize(
+    HTTPParser.RESPONSE,
+    new HTTPClientAsyncResource("HTTPINCOMINGMESSAGE", req),
+    req.maxHeaderSize || 0,
+    lenient ? kLenientAll : kLenientNone,
+    0
+  );
 
   parser.socket = socket;
   parser.outgoing = req;

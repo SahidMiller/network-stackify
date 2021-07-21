@@ -32,6 +32,7 @@ const {
   chunkExpression,
   kIncomingMessage,
   kRequestTimeout,
+  HTTPParser,
   isLenient,
   _checkInvalidHeaderChar: checkInvalidHeaderChar,
   prepareError,
@@ -150,10 +151,7 @@ function ServerResponse(req) {
   this._expect_continue = false;
 
   if (req.httpVersionMajor < 1 || req.httpVersionMinor < 1) {
-    this.useChunkedEncodingByDefault = RegExp.prototype.test.call(
-      chunkExpression,
-      req.headers.te
-    );
+    this.useChunkedEncodingByDefault = chunkExpression.test(req.headers.te);
     this.shouldKeepAlive = false;
   }
 }
@@ -852,7 +850,7 @@ function parserOnIncoming(server, socket, state, req, keepAlive) {
     req.httpVersionMajor === 1 &&
     req.httpVersionMinor === 1
   ) {
-    if (RegExp.prototype.test.call(continueExpression, req.headers.expect)) {
+    if (continueExpression.test(req.headers.expect)) {
       res._expect_continue = true;
 
       if (server.listenerCount("checkContinue") > 0) {

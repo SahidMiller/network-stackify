@@ -451,14 +451,13 @@ function matchHeader(self, state, field, value) {
     case "connection":
       state.connection = true;
       self._removedConnection = false;
-      if (RegExp.prototype.test.call(RE_CONN_CLOSE, value)) self._last = true;
+      if (RE_CONN_CLOSE.test(value)) self._last = true;
       else self.shouldKeepAlive = true;
       break;
     case "transfer-encoding":
       state.te = true;
       self._removedTE = false;
-      if (RegExp.prototype.test.call(RE_TE_CHUNKED, value))
-        self.chunkedEncoding = true;
+      if (RE_TE_CHUNKED.test(value)) self.chunkedEncoding = true;
       break;
     case "content-length":
       state.contLen = true;

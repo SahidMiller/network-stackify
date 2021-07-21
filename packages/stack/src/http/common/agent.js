@@ -83,7 +83,7 @@ function Agent(options) {
 
   if (this.maxTotalSockets !== undefined) {
     validateNumber(this.maxTotalSockets, "maxTotalSockets");
-    if (this.maxTotalSockets <= 0 || NumberIsNaN(this.maxTotalSockets))
+    if (this.maxTotalSockets <= 0 || Number.isNaN(this.maxTotalSockets))
       throw new ERR_OUT_OF_RANGE(
         "maxTotalSockets",
         "> 0",

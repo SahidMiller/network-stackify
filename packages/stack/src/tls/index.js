@@ -322,7 +322,7 @@ function check(hostParts, pattern, wildcards) {
   // good way to detect their encoding or normalize them so we simply
   // reject them.  Control characters and blanks are rejected as well
   // because nothing good can come from accepting them.
-  const isBad = (s) => RegExp.prototype.test.call(/[^\u0021-\u007F]/u, s);
+  const isBad = (s) => /[^\u0021-\u007F]/u.test(s);
   if (Array.prototype.some.call(patternParts, isBad)) return false;
 
   // Check host parts from right to left first.

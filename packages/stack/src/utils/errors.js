@@ -1032,7 +1032,7 @@ E(
           types,
           String.prototype.toLowerCase.call(value)
         );
-      } else if (RegExp.prototype.test.call(classRegExp, value)) {
+      } else if (classRegExp.test(value)) {
         Array.prototype.push.call(instances, value);
       } else {
         assert(

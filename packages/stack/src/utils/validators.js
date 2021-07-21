@@ -11,7 +11,7 @@ const {
   },
 } = require("./errors");
 const { normalizeEncoding } = require("./util");
-const { isArrayBufferView } = require("util/types");
+const { isArrayBufferView } = require("util").types;
 
 function isInt32(value) {
   return value === (value | 0);
@@ -37,9 +37,9 @@ const modeDesc = "must be a 32-bit unsigned integer or an octal string";
  * @returns {number}
  */
 function parseFileMode(value, name, def) {
-  value ??= def;
+  if (!value) value = def;
   if (typeof value === "string") {
-    if (!RegExp.prototype.test.call(octalReg, value)) {
+    if (!octalReg.test(value)) {
       throw new ERR_INVALID_ARG_VALUE(name, value, modeDesc);
     }
     value = Number.parseInt(value, 8);
