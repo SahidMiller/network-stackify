@@ -1,183 +1,169 @@
-const { Duplex } = require("stream");
-const getIterator = require("get-iterator");
-const Fifo = require("p-fifo");
-const { Buffer } = require("buffer");
-const END_CHUNK = Buffer.alloc(0);
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-const buffer = require("it-buffer");
-const getCircuitRelay = require("./circuit-relay");
-const net = require("../../utils/net");
+"use strict";
 
-/**
- * Convert async iterator stream to socket
- * @param {Object} options options.stream: required to convert to a socket
- * @returns {Socket} socket like class using underlying stream
- */
-class Socket extends Duplex {
-  constructor(options) {
-    options = options || {};
+const EventEmitter = require("events");
+let debug = require("util").debuglog("net", (fn) => {
+  debug = fn;
+});
+const { normalizedArgsSymbol } = require("../../../utils/net");
+const assert = require("assert");
 
-    super(options);
+const {
+  codes: {
+    ERR_INVALID_ARG_TYPE,
+    ERR_INVALID_ARG_VALUE,
+    ERR_INVALID_FD_TYPE,
+    ERR_SERVER_ALREADY_LISTEN,
+    ERR_SERVER_NOT_RUNNING,
+  },
+  errnoException,
+  exceptionWithHostPort,
+} = require("../../../utils/errors");
+const {
+  validateAbortSignal,
+  validateInt32,
+  validatePort,
+} = require("../../../utils/validators");
 
-    this.reading = false;
-    this.fifo = new Fifo();
+// const { UV_EINVAL } = internalBinding("uv");
+// const { guessHandleType } = internalBinding("util");
+// const { TCP, constants: TCPConstants } = internalBinding("tcp_wrap");
+// const { Pipe, constants: PipeConstants } = internalBinding("pipe_wrap");
+// const {
+//   newAsyncId,
+//   defaultTriggerAsyncIdScope,
+//   symbols: { async_id_symbol, owner_symbol },
+// } = require("internal/async_hooks");
 
-    //TODO God willing: Implement required net.Socket convensions, setTimeout
-    this.setTimeout = () => {};
-    this.setNoDelay = () => {};
+// Lazy loaded to improve startup performance.
+let cluster;
+let dns;
 
-    this.connecting = false;
-  }
+const DEFAULT_IPV4_ADDR = "0.0.0.0";
+const DEFAULT_IPV6_ADDR = "::";
 
-  _write(chunk, enc, cb) {
-    this.fifo.push(chunk).then(() => cb(), cb);
-  }
+const isWindows = process.platform === "win32";
 
-  _final(cb) {
-    this.fifo.push(END_CHUNK).then(() => cb(), cb);
-  }
+const noop = () => {};
 
-  async _read(size) {
-    if (this.connecting || !this.duplex) {
-      this.once("connect", () => this._read(size));
-      return;
-    }
-
-    if (this.reading) return;
-
-    this.reading = true;
-
-    try {
-      while (true) {
-        //TODO God willing: if no duplex, then not connected yet, so either wait to read or return nothing.
-        const { value, done } = await this.duplex.source.next(size);
-        if (done) return this.push(null);
-        if (!this.push(value)) break;
-      }
-    } catch (err) {
-      this.emit("error", err);
-    } finally {
-      this.reading = false;
-    }
-  }
-
-  async internalConnect({ libp2p, multiaddr, proto, hops }) {
-    if (!libp2p) {
-      throw new Error("Invalid arguments. 'options.libp2p' is required");
-    }
-
-    if (!multiaddr) {
-      throw new Error("Invalid arguments. 'options.multiaddr' is required");
-    }
-
-    if (!proto) {
-      throw new Error("Invalid arguments. 'options.proto' is required");
-    }
-
-    hops = typeof hops === "string" ? [hops] : hops || [];
-
-    //Attempt to connect to first node using multiaddress
-    let connection = await libp2p.dial(multiaddr);
-
-    for (let i = 0; i < hops.length; i++) {
-      //Attempt to hop from connection to connection using circuit-relay protocol
-      connection = await getCircuitRelay(libp2p, connection, hops[i]);
-    }
-
-    //Attempt to connect to protocol on "exit node"
-    const { stream } = connection && (await connection.newStream(proto));
-
-    if (!stream) {
-      //TODO God willing: replicate net.connect/createConnection errors and warnings
-      throw new Error("Failed to connect to remote");
-    }
-
-    const duplex = {
-      sink: stream.sink,
-      source: stream.source ? getIterator(buffer(stream.source)) : null,
-    };
-
-    if (duplex.sink) {
-      const self = this;
-
-      duplex.sink({
-        [Symbol.asyncIterator]() {
-          return this;
-        },
-        async next() {
-          const chunk = await self.fifo.shift();
-          return chunk === END_CHUNK ? { done: true } : { value: chunk };
-        },
-        async throw(err) {
-          self.destroy(err);
-          return { done: true };
-        },
-        async return() {
-          self.destroy();
-          return { done: true };
-        },
-      });
-    }
-
-    this.duplex = duplex;
-    this.emit("connect");
-  }
-
-  get readyState() {
-    if (this.connecting) {
-      return "opening";
-    } else if (this.readable && this.writable) {
-      return "open";
-    } else if (this.readable && !this.writable) {
-      return "readOnly";
-    } else if (!this.readable && this.writable) {
-      return "writeOnly";
-    }
-    return "closed";
-  }
-
-  connect(...args) {
-    let normalized;
-    // If passed an array, it's treated as an array of arguments that have
-    // already been normalized (so we don't normalize more than once). This has
-    // been solved before in https://github.com/nodejs/node/pull/12342, but was
-    // reverted as it had unintended side effects.
-    if (Array.isArray(args[0]) && args[0][net.normalizedArgsSymbol]) {
-      normalized = args[0];
-    } else {
-      normalized = net._normalizeArgs(args);
-    }
-
-    const options = normalized[0];
-    const cb = normalized[1];
-
-    if (cb !== null) {
-      this.once("connect", cb);
-    }
-
-    //TODO God willing: parse hops and protocols from multiaddress
-    this.internalConnect(options);
-
-    return this;
-  }
+function getFlags(ipv6Only) {
+  return ipv6Only === true ? TCPConstants.UV_TCP_IPV6ONLY : 0;
 }
 
-/**
- *
- * @param {*} multiaddr multiaddress of libp2p proxy
- * @param {*} proto p2p protocol name
- * @returns
- */
+function createHandle(fd, is_server) {
+  validateInt32(fd, "fd", 0);
+  const type = guessHandleType(fd);
+  if (type === "PIPE") {
+    return new Pipe(is_server ? PipeConstants.SERVER : PipeConstants.SOCKET);
+  }
+
+  if (type === "TCP") {
+    return new TCP(is_server ? TCPConstants.SERVER : TCPConstants.SOCKET);
+  }
+
+  throw new ERR_INVALID_FD_TYPE(type);
+}
+
+function getNewAsyncId(handle) {
+  return !handle || typeof handle.getAsyncId !== "function"
+    ? newAsyncId()
+    : handle.getAsyncId();
+}
+
+function isPipeName(s) {
+  return typeof s === "string" && toNumber(s) === false;
+}
+
+function createServer(options, connectionListener) {
+  return new Server(options, connectionListener);
+}
+
+// Target API:
+//
+// let s = net.connect({port: 80, host: 'google.com'}, function() {
+//   ...
+// });
+//
+// There are various forms:
+//
+// connect(options, [cb])
+// connect(port, [host], [cb])
+// connect(path, [cb]);
+//
 function connect(...args) {
-  const normalized = net._normalizeArgs(args);
-  const [options] = normalized;
+  const normalized = normalizeArgs(args);
+  const options = normalized[0];
+  debug("createConnection", normalized);
+  const socket = new Socket(options);
 
   if (options.timeout) {
     socket.setTimeout(options.timeout);
   }
 
-  const socket = new Socket(options);
   return socket.connect(normalized);
+}
+
+// Returns an array [options, cb], where options is an object,
+// cb is either a function or null.
+// Used to normalize arguments of Socket.prototype.connect() and
+// Server.prototype.listen(). Possible combinations of parameters:
+//   (options[...][, cb])
+//   (path[...][, cb])
+//   ([port][, host][...][, cb])
+// For Socket.prototype.connect(), the [...] part is ignored
+// For Server.prototype.listen(), the [...] part is [, backlog]
+// but will not be handled here (handled in listen())
+function normalizeArgs(args) {
+  let arr;
+
+  if (args.length === 0) {
+    arr = [{}, null];
+    arr[normalizedArgsSymbol] = true;
+    return arr;
+  }
+
+  const arg0 = args[0];
+  let options = {};
+  if (typeof arg0 === "object" && arg0 !== null) {
+    // (options[...][, cb])
+    options = arg0;
+  } else if (isPipeName(arg0)) {
+    // (path[...][, cb])
+    options.path = arg0;
+  } else {
+    // ([port][, host][...][, cb])
+    options.port = arg0;
+    if (args.length > 1 && typeof args[1] === "string") {
+      options.host = args[1];
+    }
+  }
+
+  const cb = args[args.length - 1];
+  if (typeof cb !== "function") arr = [options, null];
+  else arr = [options, cb];
+
+  arr[normalizedArgsSymbol] = true;
+  return arr;
 }
 
 function addAbortSignalOption(self, options) {
@@ -227,8 +213,8 @@ function Server(options, connectionListener) {
   this.allowHalfOpen = options.allowHalfOpen || false;
   this.pauseOnConnect = !!options.pauseOnConnect;
 }
-ObjectSetPrototypeOf(Server.prototype, EventEmitter.prototype);
-ObjectSetPrototypeOf(Server, EventEmitter);
+Object.setPrototypeOf(Server.prototype, EventEmitter.prototype);
+Object.setPrototypeOf(Server, EventEmitter);
 
 function toNumber(x) {
   return (x = Number(x)) >= 0 ? x : false;
@@ -257,8 +243,10 @@ function createServerHandle(address, port, addressType, fd, flags) {
   } else if (port === -1 && addressType === -1) {
     handle = new Pipe(PipeConstants.SERVER);
     if (isWindows) {
-      const instances = NumberParseInt(process.env.NODE_PENDING_PIPE_INSTANCES);
-      if (!NumberIsNaN(instances)) {
+      const instances = Number.parseInt(
+        process.env.NODE_PENDING_PIPE_INSTANCES
+      );
+      if (!Number.isNaN(instances)) {
         handle.setPendingInstances(instances);
       }
     }
@@ -292,6 +280,7 @@ function createServerHandle(address, port, addressType, fd, flags) {
   return handle;
 }
 
+//TODO God willing: listen handle rval remove for libp2p
 function setupListenHandle(address, port, addressType, backlog, fd, flags) {
   debug("setupListenHandle", address, port, addressType, backlog, fd);
 
@@ -571,7 +560,7 @@ function lookupAndListen(self, port, address, backlog, exclusive, flags) {
   });
 }
 
-ObjectDefineProperty(Server.prototype, "listening", {
+Object.defineProperty(Server.prototype, "listening", {
   get: function () {
     return !!this._handle;
   },
@@ -621,7 +610,6 @@ function onconnection(err, clientHandle) {
   socket.server = self;
   socket._server = self;
 
-  DTRACE_NET_SERVER_CONNECTION(socket);
   self.emit("connection", socket);
 }
 
@@ -744,7 +732,7 @@ Server.prototype[EventEmitter.captureRejectionSymbol] = function (
 
 // Legacy alias on the C++ wrapper object. This is not public API, so we may
 // want to runtime-deprecate it at some point. There's no hurry, though.
-ObjectDefineProperty(TCP.prototype, "owner", {
+Object.defineProperty(TCP.prototype, "owner", {
   get() {
     return this[owner_symbol];
   },
@@ -753,20 +741,11 @@ ObjectDefineProperty(TCP.prototype, "owner", {
   },
 });
 
-ObjectDefineProperty(Socket.prototype, "_handle", {
-  get() {
-    return this[kHandle];
-  },
-  set(v) {
-    return (this[kHandle] = v);
-  },
-});
-
 Server.prototype._setupWorker = function (socketList) {
   this._usingWorkers = true;
   this._workers.push(socketList);
   socketList.once("exit", (socketList) => {
-    const index = ArrayPrototypeIndexOf(this._workers, socketList);
+    const index = Array.prototype.indexOf.call(this._workers, socketList);
     this._workers.splice(index, 1);
   });
 };
@@ -787,57 +766,4 @@ Server.prototype.unref = function () {
   return this;
 };
 
-let _setSimultaneousAccepts;
-let warnSimultaneousAccepts = true;
-
-if (isWindows) {
-  let simultaneousAccepts;
-
-  _setSimultaneousAccepts = function (handle) {
-    if (warnSimultaneousAccepts) {
-      process.emitWarning(
-        "net._setSimultaneousAccepts() is deprecated and will be removed.",
-        "DeprecationWarning",
-        "DEP0121"
-      );
-      warnSimultaneousAccepts = false;
-    }
-    if (handle === undefined) {
-      return;
-    }
-
-    if (simultaneousAccepts === undefined) {
-      simultaneousAccepts =
-        process.env.NODE_MANY_ACCEPTS && process.env.NODE_MANY_ACCEPTS !== "0";
-    }
-
-    if (handle._simultaneousAccepts !== simultaneousAccepts) {
-      handle.setSimultaneousAccepts(!!simultaneousAccepts);
-      handle._simultaneousAccepts = simultaneousAccepts;
-    }
-  };
-} else {
-  _setSimultaneousAccepts = function () {
-    if (warnSimultaneousAccepts) {
-      process.emitWarning(
-        "net._setSimultaneousAccepts() is deprecated and will be removed.",
-        "DeprecationWarning",
-        "DEP0121"
-      );
-      warnSimultaneousAccepts = false;
-    }
-  };
-}
-
-//TODO God willing: add similar isIP, isIPv4/6 types for multiaddresses and hops
-//TODO God willing: blocklist and Server could be useful.
-
-const { Server } = require("./server");
-module.exports = {
-  connect,
-  createConnection: connect,
-  Socket,
-  Stream: Socket,
-  ...net,
-  Server,
-};
+module.exports = { Server };
