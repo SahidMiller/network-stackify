@@ -364,37 +364,8 @@ Server.prototype.setTimeout = function setTimeout(msecs, callback) {
   return this;
 };
 
-Server.prototype[EE.captureRejectionSymbol] = function (err, event, ...args) {
-  switch (event) {
-    case "request":
-      const { 1: res } = args;
-      if (!res.headersSent && !res.writableEnded) {
-        // Don't leak headers.
-        const names = res.getHeaderNames();
-        for (let i = 0; i < names.length; i++) {
-          res.removeHeader(names[i]);
-        }
-        res.statusCode = 500;
-        res.end(STATUS_CODES[500]);
-      } else {
-        res.destroy();
-      }
-      break;
-    default:
-      net.Server.prototype[Symbol.for("nodejs.rejection")].apply(
-        this,
-        arguments
-      );
-  }
-};
-
 function connectionListener(socket) {
-  defaultTriggerAsyncIdScope(
-    getOrSetAsyncId(socket),
-    connectionListenerInternal,
-    this,
-    socket
-  );
+  connectionListenerInternal(this, socket);
 }
 
 function connectionListenerInternal(server, socket) {

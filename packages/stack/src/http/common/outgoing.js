@@ -906,10 +906,6 @@ OutgoingMessage.prototype.pipe = function pipe() {
   this.emit("error", new ERR_STREAM_CANNOT_PIPE());
 };
 
-OutgoingMessage.prototype[EE.captureRejectionSymbol] = function (err, event) {
-  this.destroy(err);
-};
-
 module.exports = {
   validateHeaderName,
   validateHeaderValue,
