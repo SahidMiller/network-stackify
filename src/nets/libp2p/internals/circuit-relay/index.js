@@ -1,5 +1,6 @@
 import StreamHandler from "./stream-handler.js";
-import { Type, Status } from "./circuit-pb.js";
+import CircuitPB from "./circuit-pb.js";
+const { Type, Status } = CircuitPB
 import { createFromCID } from "peer-id";
 import { Multiaddr } from "multiaddr";
 import toConnection from "libp2p-utils/src/stream-to-ma-conn.js";

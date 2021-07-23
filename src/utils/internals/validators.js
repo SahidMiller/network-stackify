@@ -1,17 +1,17 @@
 "use strict";
 
-import errors from "./errors";
-const {
+import {
   hideStackFrames,
-  codes: {
+  codes,
+} from "./errors.js";
+const {
     ERR_SOCKET_BAD_PORT,
     ERR_INVALID_ARG_TYPE,
     ERR_INVALID_ARG_VALUE,
     ERR_OUT_OF_RANGE,
     ERR_INVALID_CALLBACK,
-  },
-} = errors;
-import { normalizeEncoding } from "./util";
+  } = codes
+import { normalizeEncoding } from "./util.js";
 import { types } from "util";
 const { isArrayBufferView } = types;
 

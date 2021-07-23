@@ -21,20 +21,20 @@
 
 "use strict";
 
-import { Agent as _Agent, globalAgent } from "./common/agent";
-import { ClientRequest } from "./common/client";
-import { IncomingMessage } from "./common/incoming";
+import { Agent as _Agent, globalAgent } from "./common/agent.js";
+import { ClientRequest } from "./common/client.js";
+import { IncomingMessage } from "./common/incoming.js";
 import {
   validateHeaderName,
   validateHeaderValue,
   OutgoingMessage,
-} from "./common/outgoing";
+} from "./common/outgoing.js";
 import {
   _connectionListener,
   STATUS_CODES,
   Server,
   ServerResponse,
-} from "./common/server";
+} from "./common/server.js";
 
 let maxHeaderSize;
 
@@ -156,26 +156,3 @@ export {
   get,
   request,
 };
-
-Object.defineProperty(module.exports, "maxHeaderSize", {
-  configurable: true,
-  enumerable: true,
-  get() {
-    if (maxHeaderSize === undefined) {
-      maxHeaderSize = 15000;
-    }
-
-    return maxHeaderSize;
-  },
-});
-
-Object.defineProperty(module.exports, "globalAgent", {
-  configurable: true,
-  enumerable: true,
-  get() {
-    return globalAgent;
-  },
-  set(value) {
-    globalAgent = value;
-  },
-});

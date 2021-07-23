@@ -29,22 +29,22 @@ import {
   HTTPParser,
   isLenient,
   prepareError,
-} from "./common";
-import { OutgoingMessage } from "./outgoing";
-import { globalAgent } from "./agent";
+} from "./common.js";
+import { OutgoingMessage } from "./outgoing.js";
+import { globalAgent } from "./agent.js";
 import { Buffer } from "buffer";
 import {
   urlToHttpOptions,
   searchParamsSymbol,
-} from "@network-stackify/stack/utils/url";
+} from "@network-stackify/stack/utils/url.js";
 import { URL } from "url";
-import { kOutHeaders, kNeedDrain } from "./internal/http";
+import { kOutHeaders, kNeedDrain } from "./internal/http.js";
 
 import { addAbortSignal, finished } from "stream";
 import {
   connResetException,
   codes,
-} from "@network-stackify/stack/utils/errors";
+} from "@network-stackify/stack/utils/errors.js";
 
 const {
   ERR_HTTP_HEADERS_SENT,
@@ -53,9 +53,10 @@ const {
   ERR_INVALID_PROTOCOL,
   ERR_UNESCAPED_CHARACTERS,
 } = codes;
-import { validateInteger } from "@network-stackify/stack/utils/validators";
+import { validateInteger } from "@network-stackify/stack/utils/validators.js";
 
-let debug = require("util").debuglog("http", (fn) => {
+import { debuglog } from "util"
+let debug = debuglog("http", (fn) => {
   debug = fn;
 });
 

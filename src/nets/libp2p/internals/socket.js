@@ -5,11 +5,11 @@ import { Buffer } from "buffer";
 const END_CHUNK = Buffer.alloc(0);
 
 import buffer from "it-buffer";
-import getCircuitRelay from "./circuit-relay";
+import getCircuitRelay from "./circuit-relay/index.js";
 import {
   normalizedArgsSymbol,
   _normalizeArgs,
-} from "@network-stackify/stack/utils/net";
+} from "@network-stackify/stack/utils/net.js";
 
 /**
  * Convert async iterator stream to socket

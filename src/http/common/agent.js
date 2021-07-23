@@ -25,7 +25,8 @@ import { createConnection as _createConnection, isIP } from "net";
 import EventEmitter from "events";
 import { errors, validators } from "@network-stackify/stack/utils";
 
-let debug = require("util").debuglog("http", (fn) => {
+import { debuglog } from "util"
+let debug = debuglog("http", (fn) => {
   debug = fn;
 });
 

@@ -35,15 +35,15 @@ import {
   isLenient,
   _checkInvalidHeaderChar as checkInvalidHeaderChar,
   prepareError,
-} from "./common";
-import { OutgoingMessage } from "./outgoing";
-import { kOutHeaders, kNeedDrain } from "./internal/http";
+} from "./common.js";
+import { OutgoingMessage } from "./outgoing.js";
+import { kOutHeaders, kNeedDrain } from "./internal/http.js";
 
-import { IncomingMessage } from "./incoming";
+import { IncomingMessage } from "./incoming.js";
 import {
   connResetException,
   codes,
-} from "@network-stackify/stack/utils/errors";
+} from "@network-stackify/stack/utils/errors.js";
 const {
   ERR_HTTP_REQUEST_TIMEOUT,
   ERR_HTTP_HEADERS_SENT,
@@ -56,11 +56,12 @@ const {
 import {
   validateInteger,
   validateBoolean,
-} from "@network-stackify/stack/utils/validators";
+} from "@network-stackify/stack/utils/validators.js";
 import { Buffer } from "buffer";
 import { setTimeout, clearTimeout } from "timers";
 
-let debug = require("util").debuglog("http", (fn) => {
+import { debuglog } from "util"
+let debug = debuglog("http", (fn) => {
   debug = fn;
 });
 

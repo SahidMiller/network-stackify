@@ -23,16 +23,17 @@
 
 import { Server as _Server, connect } from "tls";
 
-import { Agent as HttpAgent } from "./common/agent";
-import { ClientRequest } from "./common/client";
+import { Agent as HttpAgent } from "./common/agent.js";
+import { ClientRequest } from "./common/client.js";
 import {
   storeHTTPOptions,
   _connectionListener,
   Server as __Server,
-} from "./common/server";
+} from "./common/server.js";
 
-import { urlToHttpOptions, searchParamsSymbol } from "../utils/url";
-let debug = require("util").debuglog("https", (fn) => {
+import { urlToHttpOptions, searchParamsSymbol } from "@network-stackify/stack/utils/url.js";
+import { debuglog } from "util"
+debuglog("https", (fn) => {
   debug = fn;
 });
 

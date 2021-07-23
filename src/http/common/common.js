@@ -25,10 +25,11 @@ import { setImmediate } from "timers";
 import { methods, HTTPParser } from "http-parser-js";
 const insecureHTTPParser = false;
 
-import FreeList from "./internal/freelist";
-import { IncomingMessage, readStart, readStop } from "./incoming";
+import FreeList from "./internal/freelist.js";
+import { IncomingMessage, readStart, readStop } from "./incoming.js";
 
-let debug = require("util").debuglog("http", (fn) => {
+import { debuglog } from "util"
+let debug = debuglog("http", (fn) => {
   debug = fn;
 });
 
@@ -253,11 +254,12 @@ function isLenient() {
   return insecureHTTPParser;
 }
 
-const _checkInvalidHeaderChar = checkInvalidHeaderChar,
-const _checkIsHttpToken = checkIsHttpToken,
-const chunkExpression = /(?:^|\W)chunked(?:$|\W)/i,
-const continueExpression = /(?:^|\W)100-continue(?:$|\W)/i,
+const _checkInvalidHeaderChar = checkInvalidHeaderChar
+const _checkIsHttpToken = checkIsHttpToken
+const chunkExpression = /(?:^|\W)chunked(?:$|\W)/i
+const continueExpression = /(?:^|\W)100-continue(?:$|\W)/i
 const CRLF = "\r\n"
+
 export {
   _checkInvalidHeaderChar,
   _checkIsHttpToken,

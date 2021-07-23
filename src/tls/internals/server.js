@@ -24,14 +24,15 @@
 import EE from "events";
 import { Server as _Server } from "net";
 
-let debug = require("util").debuglog("tls", (fn) => {
+import { debuglog } from "util"
+let debug = debuglog("tls", (fn) => {
   debug = fn;
 });
 
-import { TLSSocket } from "./socket";
-import { connResetException, codes } from "../utils/errors";
+import { TLSSocket } from "./socket.js";
+import { connResetException, codes } from "@network-stackify/stack/utils/errors.js";
 const { ERR_INVALID_ARG_TYPE } = codes;
-import { validateNumber } from "../utils/validators";
+import { validateNumber } from "@network-stackify/stack/utils/validators.js";
 
 const kErrorEmitted = Symbol("error-emitted");
 const kHandshakeTimeout = Symbol("handshake-timeout");

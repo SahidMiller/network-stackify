@@ -1,5 +1,5 @@
-export * as errors from "./internals/errors";
-export * as net from "./internals/net";
-export * as url from "./internals/url";
-export * as util from "./internals/util";
-export * as validators from "./internals/validators";
+export * as errors from "./internals/errors.js";
+export * as net from "./internals/net.js";
+export * as url from "./internals/url.js";
+export * as util from "./internals/util.js";
+export * as validators from "./internals/validators.js";

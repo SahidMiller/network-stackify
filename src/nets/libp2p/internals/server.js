@@ -22,23 +22,22 @@
 "use strict";
 
 import EventEmitter from "events";
-import { normalizedArgsSymbol } from "@network-stackify/stack/utils/net";
-import errors from "@network-stackify/stack/utils/errors";
+import { normalizedArgsSymbol } from "@network-stackify/stack/utils/net.js";
+import { codes } from "@network-stackify/stack/utils/errors.js";
 
-let debug = require("util").debuglog("net", (fn) => {
+import { debuglog } from "util"
+let debug = debuglog("net", (fn) => {
   debug = fn;
 });
 
 const {
-  codes: {
     ERR_INVALID_ARG_TYPE,
     ERR_INVALID_ARG_VALUE,
     ERR_SERVER_ALREADY_LISTEN,
     ERR_SERVER_NOT_RUNNING,
-  },
-} = errors;
-import { validateAbortSignal } from "@network-stackify/stack/utils/validators";
-import { Socket } from "./socket";
+  } = codes;
+import { validateAbortSignal } from "@network-stackify/stack/utils/validators.js";
+import { Socket } from "./socket.js";
 
 function isPipeName(s) {
   return typeof s === "string" && toNumber(s) === false;

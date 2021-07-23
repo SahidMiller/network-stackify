@@ -21,17 +21,18 @@
 
 "use strict";
 
-import { getDefaultHighWaterMark } from "./internal/streams/state";
+import { getDefaultHighWaterMark } from "./internal/streams/state.js";
 import assert from "assert";
 import Stream from "stream";
 
-import { kOutHeaders, utcDate, kNeedDrain } from "./internal/http";
+import { kOutHeaders, utcDate, kNeedDrain } from "./internal/http.js";
 import { Buffer } from "buffer";
 import common, {
   _checkIsHttpToken,
   _checkInvalidHeaderChar,
   chunkExpression,
-} from "./common";
+  CRLF
+} from "./common.js";
 const checkIsHttpToken = _checkIsHttpToken;
 const checkInvalidHeaderChar = _checkInvalidHeaderChar;
 import { errors } from "@network-stackify/stack/utils";
@@ -56,12 +57,12 @@ const {
 import { types } from "util";
 const { isUint8Array } = types;
 
-let debug = require("util").debuglog("http", (fn) => {
+import { debuglog } from "util"
+let debug = debuglog("http", (fn) => {
   debug = fn;
 });
 
 const HIGH_WATER_MARK = getDefaultHighWaterMark();
-const { CRLF } = common;
 
 const kCorked = Symbol("corked");
 

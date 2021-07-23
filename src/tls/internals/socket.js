@@ -3,8 +3,8 @@ import { _extend } from "util";
 import { Duplex } from "stream";
 import forge, { forge as _forge, pki, tls } from "node-forge";
 
-import rootCerts from "./rootCertificates";
-import { checkServerIdentity } from "./checkServerIdentity";
+import rootCerts from "./rootCertificates.js";
+import { checkServerIdentity } from "./checkServerIdentity.js";
 
 // Compatibility shim for the browser
 if (_forge) {

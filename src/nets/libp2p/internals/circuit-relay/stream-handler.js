@@ -1,6 +1,6 @@
 import { decode, encode } from "it-length-prefixed";
 import handshake from "it-handshake";
-import { decode as _decode, encode as _encode } from "./circuit-pb";
+import CircuitPB from "./circuit-pb.js";
 
 export default class StreamHandler {
   /**
@@ -27,7 +27,7 @@ export default class StreamHandler {
   async read() {
     const msg = await this.decoder.next();
     if (msg.value) {
-      const value = _decode(msg.value.slice());
+      const value = CircuitPB.decode(msg.value.slice());
       return value;
     }
 
@@ -41,7 +41,7 @@ export default class StreamHandler {
    * @param {*} msg An unencoded CircuitRelay protobuf message
    */
   write(msg) {
-    this.shake.write(encode.single(_encode(msg)));
+    this.shake.write(encode.single(CircuitPB.encode(msg)));
   }
 
   /**
