@@ -13,11 +13,15 @@
   },
   "type": "module",
   "exports": {
-    "http": "./src/http/http.js",
-    "https": "./src/https/https.js",
-    "tls": "./src/tls/index.js",
-    "nets": "./src/nets/index.js",
-    "utils": "./src/utils/index.js"
+    ".": "./src/index.js",
+    "./": "./src/",
+    "./http": "./src/http/http.js",
+    "./https": "./src/http/https.js",
+    "./tls": "./src/tls/index.js",
+    "./nets": "./src/nets/index.js",
+    "./nets/": "./src/nets/",
+    "./utils": "./src/utils/index.js",
+    "./utils/": "./src/utils/internals/"
   },
   "dependencies": {
     "@network-stackify/ws": "^7.5.3",
