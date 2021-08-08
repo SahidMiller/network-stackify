@@ -1,14 +1,15 @@
 import { Socket, _normalizeArgs } from "net";
 import { _extend } from "util";
 import { Duplex } from "stream";
-import forge, { forge as _forge, pki, tls } from "node-forge";
+import forge from "node-forge";
 
 import rootCerts from "./rootCertificates.js";
 import { checkServerIdentity } from "./checkServerIdentity.js";
 
 // Compatibility shim for the browser
-if (_forge) {
-  forge = _forge;
+// Compatibility shim for the browser
+if (forge.forge) {
+  forge = forge.forge;
 }
 
 export class TLSSocket extends Duplex {
@@ -29,20 +30,35 @@ export class TLSSocket extends Duplex {
     this.initSocket(socket);
   }
 
+  setTimeout(timeout, cb) {
+    this._socket.setTimeout(timeout, cb);
+  }
+
+  setNoDelay(noDelay) {
+    this._socket.setNoDelay(noDelay);
+  }
+
+  unref() {
+    this._socket.unref();
+  }
+
+  ref() {
+    this._socket.ref();
+  }
+
+  setKeepAlive(enable, delay) {
+    this._socket.setKeepAlive(enable, delay);
+  }
+
   log(...args) {
     if (this._options.debug) {
       console.log.apply(console, Array.prototype.slice.call(args));
     }
   }
 
-  _read() {}
-
-  setTimeout() {}
-  setNoDelay() {}
-
   createCaStore() {
     const rootCertificates = this._options.rootCertificates || rootCerts;
-    const caStore = pki.createCaStore([]);
+    const caStore = forge.pki.createCaStore([]);
 
     for (let i = 0; i < rootCertificates.length; i++) {
       const rootCertificate = rootCertificates[i];
@@ -95,14 +111,14 @@ export class TLSSocket extends Duplex {
             )
           ) {
             verified = {
-              alert: tls.Alert.Description.bad_certificate,
+              alert: forge.tls.Alert.Description.bad_certificate,
               message: "Certificate common name does not match hostname.",
             };
             console.warn("[tls] " + cn + " !== " + options.servername);
           }
 
           try {
-            if (pki.verifyCertificateChain(caStore, certs)) {
+            if (forge.pki.verifyCertificateChain(caStore, certs)) {
               caStore.addCertificate(currentCert);
             } else {
               self.log("[tls] failed to verify certificate chain");
@@ -166,7 +182,7 @@ export class TLSSocket extends Duplex {
       sslOptions.getPrivateKey = () => options.key;
     }
 
-    this.ssl = tls.createConnection(sslOptions);
+    this.ssl = forge.tls.createConnection(sslOptions);
 
     this._socket.on("data", (data) => {
       self.log(
@@ -183,6 +199,8 @@ export class TLSSocket extends Duplex {
       this.ssl.handshake();
     }
   }
+
+  _read() {}
 
   _writenow(data, encoding, cb) {
     cb = cb || function () {};
@@ -267,6 +285,8 @@ function normalizeConnectArgs(listArgs) {
 }
 
 function onConnectSecure() {
+  this.authorized = true;
+  this._socket.authorized = true;
   this.emit("secureConnect");
 }
 

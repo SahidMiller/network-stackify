@@ -27,14 +27,13 @@ import Stream from "stream";
 
 import { kOutHeaders, utcDate, kNeedDrain } from "./internal/http.js";
 import { Buffer } from "buffer";
-import common, {
-  _checkIsHttpToken,
-  _checkInvalidHeaderChar,
+import * as common from "./common.js";
+const {
+  _checkIsHttpToken: checkIsHttpToken,
+  _checkInvalidHeaderChar: checkInvalidHeaderChar,
   chunkExpression,
-  CRLF
-} from "./common.js";
-const checkIsHttpToken = _checkIsHttpToken;
-const checkInvalidHeaderChar = _checkInvalidHeaderChar;
+  CRLF,
+} = common;
 import { errors } from "@network-stackify/stack/utils";
 const {
   codes: {
@@ -57,7 +56,7 @@ const {
 import { types } from "util";
 const { isUint8Array } = types;
 
-import { debuglog } from "util"
+import { debuglog } from "util";
 let debug = debuglog("http", (fn) => {
   debug = fn;
 });

@@ -5,6 +5,9 @@ import { Server, createServer } from "./internals/server.js";
 import { Socket, connect } from "./internals/socket.js";
 export * from "@network-stackify/stack/utils/net.js";
 
+import * as self from "./index.js";
+export default self;
+
 export {
   connect,
   connect as createConnection,

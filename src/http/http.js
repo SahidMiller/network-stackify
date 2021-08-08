@@ -140,10 +140,15 @@ const METHODS = [
   "UNSUBSCRIBE",
 ];
 
+import * as self from "./http.js";
+
+export default self;
+
 export {
   METHODS,
   STATUS_CODES,
   _Agent as Agent,
+  globalAgent,
   ClientRequest,
   IncomingMessage,
   OutgoingMessage,

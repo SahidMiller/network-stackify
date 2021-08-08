@@ -40,11 +40,14 @@ import {
 import { URL } from "url";
 import { kOutHeaders, kNeedDrain } from "./internal/http.js";
 
-import { addAbortSignal, finished } from "stream";
+import Stream from "stream";
+const { addAbortSignal, finished } = Stream;
+
 import {
   connResetException,
   codes,
 } from "@network-stackify/stack/utils/errors.js";
+import { getTimerDuration } from "@network-stackify/stack/utils/timers.js";
 
 const {
   ERR_HTTP_HEADERS_SENT,
@@ -54,8 +57,7 @@ const {
   ERR_UNESCAPED_CHARACTERS,
 } = codes;
 import { validateInteger } from "@network-stackify/stack/utils/validators.js";
-
-import { debuglog } from "util"
+import { debuglog } from "util";
 let debug = debuglog("http", (fn) => {
   debug = fn;
 });

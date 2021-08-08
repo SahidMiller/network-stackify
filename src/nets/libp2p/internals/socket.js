@@ -28,6 +28,9 @@ class Socket extends Duplex {
     //TODO God willing: Implement required net.Socket convensions, setTimeout
     this.setTimeout = () => {};
     this.setNoDelay = () => {};
+    this.setKeepAlive = () => {};
+    this.ref = () => {};
+    this.unref = () => {};
 
     if (options.stream) {
       this.initStream(options.stream);

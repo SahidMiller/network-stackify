@@ -31,9 +31,12 @@ import {
   Server as __Server,
 } from "./common/server.js";
 
-import { urlToHttpOptions, searchParamsSymbol } from "@network-stackify/stack/utils/url.js";
-import { debuglog } from "util"
-debuglog("https", (fn) => {
+import {
+  urlToHttpOptions,
+  searchParamsSymbol,
+} from "@network-stackify/stack/utils/url.js";
+import { debuglog } from "util";
+let debug = debuglog("https", (fn) => {
   debug = fn;
 });
 
@@ -317,7 +320,7 @@ function request(...args) {
     Object.assign(options, Array.prototype.shift.call(args));
   }
 
-  options._defaultAgent = _globalAgent;
+  options._defaultAgent = globalAgent;
   Array.prototype.unshift.call(args, options);
 
   return Reflect.construct(ClientRequest, args);
@@ -358,5 +361,9 @@ function get(input, options, cb) {
   req.end();
   return req;
 }
+
+import * as self from "./https.js";
+
+export default self;
 
 export { Agent, globalAgent, get, request, Server, createServer };
