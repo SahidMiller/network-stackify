@@ -14,7 +14,6 @@ if (forge.forge) {
 
 export class TLSSocket extends Duplex {
   constructor(socket, options) {
-    console.log(options);
     //Wrap socket with TLS commands, God willing.
     //Create new socket if none passed, God willing.
     super();
