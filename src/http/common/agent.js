@@ -147,6 +147,7 @@ function Agent(options) {
     this.removeSocket(socket, options);
 
     socket.once("error", freeSocketErrorListener);
+    //TODO God willing: actually implement freeSockets
     Array.prototype.push.call(freeSockets, socket);
   });
 
@@ -221,7 +222,8 @@ Agent.prototype.addRequest = function addRequest(
     this.sockets[name] = [];
   }
 
-  const freeSockets = this.freeSockets[name];
+  //TODO God willing: implement freeing sockets/ref/unref.
+  const freeSockets = undefined; //this.freeSockets[name];
   let socket;
   if (freeSockets) {
     while (freeSockets.length && freeSockets[0].destroyed) {
