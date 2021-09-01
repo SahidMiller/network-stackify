@@ -26,16 +26,16 @@
   "dependencies": {
     "@network-stackify/ws": "^7.5.3",
     "get-iterator": "^1.0.2",
+    "http-parser-js": "^0.5.3",
     "it-buffer": "^0.1.3",
     "it-handshake": "^2.0.0",
     "it-length-prefixed": "^5.0.3",
     "libp2p-utils": "^0.4.1",
     "multiaddr": "^10.0.0",
-    "node-forge": "^0.10.0",
+    "node-forge": "https://github.com/githoniel/forge",
     "p-fifo": "^1.0.0",
     "peer-id": "^0.15.0",
-    "protons": "^2.0.1",
-    "http-parser-js": "^0.5.3"
+    "protons": "^2.0.1"
   },
   "repository": {
     "type": "git",
