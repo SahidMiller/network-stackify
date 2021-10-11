@@ -190,6 +190,7 @@ Server.prototype.listen = function (...args) {
   this._ma = options.libp2p.peerId.toB58String();
   this._protocol =
     options.protocol[0] === "/" ? options.protocol : "/" + options.protocol;
+  this._port = options.port;
 
   options.libp2p.handle(this._protocol, ({ connection, stream, protocol }) => {
     console.log(connection, stream, protocol);
@@ -228,7 +229,7 @@ Server.prototype.listen = function (...args) {
 
 Server.prototype.address = function () {
   if (this.listening) {
-    return { address: this._ma, family: "LIBP2P", protocol: this._protocol };
+    return { address: this._ma, family: "LIBP2P", protocol: this._protocol, port: this._port };
   }
 
   return null;
