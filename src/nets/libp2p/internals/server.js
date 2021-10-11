@@ -281,4 +281,4 @@ Server.prototype.unref = function () {
   return this;
 };
 
-export { Server, createServer };
+export { Server, createServer, normalizeArgs };
