@@ -1,5 +1,9 @@
 export const normalizedArgsSymbol = Symbol("normalizedArgs");
 
+function isPipeName(s) {
+  return typeof s === 'string' && toNumber(s) === false;
+}
+
 export const _normalizeArgs = function normalizeArgs(args) {
   let arr;
 
